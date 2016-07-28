@@ -102,6 +102,14 @@ public class EscherConverter extends Launcher {
 
 
   /**
+   * @param args
+   */
+  public EscherConverter(String... args) {
+    super(args);
+  }
+
+
+  /**
    * @param converter
    * @param properties
    * @return
@@ -163,6 +171,7 @@ public class EscherConverter extends Launcher {
     return converter.convert(document);
   }
 
+
   /**
    * @param input
    * @param format
@@ -176,10 +185,11 @@ public class EscherConverter extends Launcher {
     return convert(parseEscherJson(input), format, properties);
   }
 
+
   /**
    * Reads an Escher input file in JSON format and returns data structures for
    * an in-memory representation of the information provided.
-   * 
+   *
    * @param input
    * @return An {@link EscherMap} object representing the information from the
    *         parsed file in memory.
@@ -207,6 +217,7 @@ public class EscherConverter extends Launcher {
     return map;
   }
 
+
   /**
    * Starts the program.
    *
@@ -216,14 +227,6 @@ public class EscherConverter extends Launcher {
   public static void main(String args[]) {
     // Export validation reports to file for debugging
     new EscherConverter(args);
-  }
-
-
-  /**
-   * @param args
-   */
-  public EscherConverter(String... args) {
-    super(args);
   }
 
 
@@ -242,6 +245,175 @@ public class EscherConverter extends Launcher {
   @Override
   protected boolean addVersionNumberToSplashScreen() {
     return false;
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#commandLineMode(de.zbit.AppConf)
+   */
+  @Override
+  public void commandLineMode(AppConf appConf) {
+    if (props.containsKey(EscherIOOptions.INPUT) && props.containsKey(EscherIOOptions.OUTPUT)) {
+      // TODO: Allow output to be empty, create file/directory if doesn't exists.
+      try {
+        File input = replaceUnixPathAbbreviations(props.getProperty(EscherIOOptions.INPUT.toString()));
+        File output = replaceUnixPathAbbreviations(props.getProperty(EscherIOOptions.OUTPUT.toString()));
+        if (input.isDirectory()) {
+          if (output.isFile()) {
+            logger.severe(bundle.getString("BatchModeOutputNotDirectory"));
+            return;
+          }
+          logger.info(format(
+            bundle.getString("EscherConverter.launchingBatchProcessing"),
+            input.getAbsolutePath()));
+        }
+        // Can also be used if only a single file is to be converted:
+        batchProcess(input, output, props);
+      } catch (SBMLException | XMLStreamException | IOException | ParseException | JAXBException | SAXException | ParserConfigurationException | TransformerException exc) {
+        exc.printStackTrace();
+      }
+    } else {
+      logger.warning(bundle.getString("EscherConverter.incompleteCMDArgs"));
+    }
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getCmdLineOptions()
+   */
+  @Override
+  public List<Class<? extends KeyProvider>> getCmdLineOptions() {
+    List<Class<? extends KeyProvider>> list = new ArrayList<Class<? extends KeyProvider>>(3);
+    list.add(EscherIOOptions.class);
+    list.add(EscherOptions.class);
+    list.add(GUIOptions.class);
+    return list;
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getInstitute()
+   */
+  @Override
+  public String getInstitute() {
+    return baseBundle.getString("INSTITUTE");
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getInteractiveOptions()
+   */
+  @Override
+  public List<Class<? extends KeyProvider>> getInteractiveOptions() {
+    List<Class<? extends KeyProvider>> list = new ArrayList<Class<? extends KeyProvider>>(1);
+    list.add(EscherOptions.class);
+    return list;
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getLogPackages()
+   */
+  @Override
+  public String[] getLogPackages() {
+    List<String> packages = new ArrayList<String>();
+    packages.addAll(Arrays.asList(super.getLogPackages()));
+    packages.add("edu.ucsd");
+    return packages.toArray(new String[] {});
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getOrganization()
+   */
+  @Override
+  public String getOrganization() {
+    return baseBundle.getString("ORGANIZATION");
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getProvider()
+   */
+  @Override
+  public String getProvider() {
+    return baseBundle.getString("PROVIDER");
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getURLlicenseFile()
+   */
+  @Override
+  public URL getURLlicenseFile() {
+    try {
+      return new URL(bundle.getString("EscherConverter.licenseURL"));
+    } catch (MalformedURLException exc) {
+      logger.warning(Utils.getMessage(exc));
+      return null;
+    }
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getURLOnlineUpdate()
+   */
+  @Override
+  public URL getURLOnlineUpdate() {
+    return null;
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getVersionNumber()
+   */
+  @Override
+  public String getVersionNumber() {
+    return baseBundle.getString("EscherConverter.version");
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getYearOfProgramRelease()
+   */
+  @Override
+  public short getYearOfProgramRelease() {
+    try {
+      return Short.parseShort(baseBundle.getString("YEAR"));
+    } catch (NumberFormatException exc) {
+      return (short) Calendar.getInstance().get(Calendar.YEAR);
+    }
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#getYearWhenProjectWasStarted()
+   */
+  @Override
+  public short getYearWhenProjectWasStarted() {
+    try {
+      return Short.parseShort(baseBundle.getString("INCEPTION_YEAR"));
+    } catch (Throwable t) {
+      return (short) 2015;
+    }
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#initGUI(de.zbit.AppConf)
+   */
+  @Override
+  public Window initGUI(AppConf appConf) {
+    return new EscherConverterUI(appConf);
+  }
+
+
+  /* (non-Javadoc)
+   * @see de.zbit.Launcher#showsGUI()
+   */
+  @Override
+  public boolean showsGUI() {
+    return props.containsKey(GUIOptions.GUI) && props.getBooleanProperty(GUIOptions.GUI);
   }
 
 
@@ -322,39 +494,9 @@ public class EscherConverter extends Launcher {
   }
 
 
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#commandLineMode(de.zbit.AppConf)
-   */
-  @Override
-  public void commandLineMode(AppConf appConf) {
-    if (props.containsKey(EscherIOOptions.INPUT) && props.containsKey(EscherIOOptions.OUTPUT)) {
-      // TODO: Allow output to be empty, create file/directory if doesn't exists.
-      try {
-        File input = replaceUnixPathAbbreviations(props.getProperty(EscherIOOptions.INPUT.toString()));
-        File output = replaceUnixPathAbbreviations(props.getProperty(EscherIOOptions.OUTPUT.toString()));
-        if (input.isDirectory()) {
-          if (output.isFile()) {
-            logger.severe(bundle.getString("BatchModeOutputNotDirectory"));
-            return;
-          }
-          logger.info(format(
-            bundle.getString("EscherConverter.launchingBatchProcessing"),
-            input.getAbsolutePath()));
-        }
-        // Can also be used if only a single file is to be converted:
-        batchProcess(input, output, props);
-      } catch (SBMLException | XMLStreamException | IOException | ParseException | JAXBException | SAXException | ParserConfigurationException | TransformerException exc) {
-        exc.printStackTrace();
-      }
-    } else {
-      logger.warning(bundle.getString("EscherConverter.incompleteCMDArgs"));
-    }
-  }
-
-
   /**
    * Does some very basic file path interpretation.
-   * 
+   *
    * @param path an input path (can be relative or start with tilde)
    * @return a {@link File} representing the absolute path.
    */
@@ -530,145 +672,6 @@ public class EscherConverter extends Launcher {
     catch (IOException e) {
       e.printStackTrace();
     }
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getCmdLineOptions()
-   */
-  @Override
-  public List<Class<? extends KeyProvider>> getCmdLineOptions() {
-    List<Class<? extends KeyProvider>> list = new ArrayList<Class<? extends KeyProvider>>(3);
-    list.add(EscherIOOptions.class);
-    list.add(EscherOptions.class);
-    list.add(GUIOptions.class);
-    return list;
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getInstitute()
-   */
-  @Override
-  public String getInstitute() {
-    return baseBundle.getString("INSTITUTE");
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getInteractiveOptions()
-   */
-  @Override
-  public List<Class<? extends KeyProvider>> getInteractiveOptions() {
-    List<Class<? extends KeyProvider>> list = new ArrayList<Class<? extends KeyProvider>>(1);
-    list.add(EscherOptions.class);
-    return list;
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getLogPackages()
-   */
-  @Override
-  public String[] getLogPackages() {
-    List<String> packages = new ArrayList<String>();
-    packages.addAll(Arrays.asList(super.getLogPackages()));
-    packages.add("edu.ucsd");
-    return packages.toArray(new String[] {});
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getOrganization()
-   */
-  @Override
-  public String getOrganization() {
-    return baseBundle.getString("ORGANIZATION");
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getProvider()
-   */
-  @Override
-  public String getProvider() {
-    return baseBundle.getString("PROVIDER");
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getURLlicenseFile()
-   */
-  @Override
-  public URL getURLlicenseFile() {
-    try {
-      return new URL(bundle.getString("EscherConverter.licenseURL"));
-    } catch (MalformedURLException exc) {
-      logger.warning(Utils.getMessage(exc));
-      return null;
-    }
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getURLOnlineUpdate()
-   */
-  @Override
-  public URL getURLOnlineUpdate() {
-    return null;
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getVersionNumber()
-   */
-  @Override
-  public String getVersionNumber() {
-    return baseBundle.getString("EscherConverter.version");
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getYearOfProgramRelease()
-   */
-  @Override
-  public short getYearOfProgramRelease() {
-    try {
-      return Short.parseShort(baseBundle.getString("YEAR"));
-    } catch (NumberFormatException exc) {
-      return (short) Calendar.getInstance().get(Calendar.YEAR);
-    }
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#getYearWhenProjectWasStarted()
-   */
-  @Override
-  public short getYearWhenProjectWasStarted() {
-    try {
-      return Short.parseShort(baseBundle.getString("INCEPTION_YEAR"));
-    } catch (Throwable t) {
-      return (short) 2015;
-    }
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#initGUI(de.zbit.AppConf)
-   */
-  @Override
-  public Window initGUI(AppConf appConf) {
-    return new EscherConverterUI(appConf);
-  }
-
-
-  /* (non-Javadoc)
-   * @see de.zbit.Launcher#showsGUI()
-   */
-  @Override
-  public boolean showsGUI() {
-    return props.containsKey(GUIOptions.GUI) && props.getBooleanProperty(GUIOptions.GUI);
   }
 
 }
