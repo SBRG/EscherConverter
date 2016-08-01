@@ -243,7 +243,11 @@
   <entry key="SingleFileMultipleLayout">sbml file has multiple layout, but the output is a
     directory, writing nothing</entry>
   <entry key="BatchModeOutputNotDirectory">output must be a directory in batch mode. exiting.</entry>
-
+  <entry key="SBMLFBCNotAvailable">file {0} doesn't have a fbc-compliant model, skipping
+    extraction of COBRA model</entry>
+  <entry key="SBMLFBCInit">fbc model found on file {0}, using cobrapy to extract model</entry>
+  <entry key="SBMLFBCExtractionSuccessful">cobra model written to {0}</entry>
+  <entry key="SBMLFBCExtractionFailed">couldn't extract cobra model, log follows:</entry>
 
 
 </properties>

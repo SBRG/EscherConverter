@@ -19,8 +19,10 @@ package edu.ucsd.sbrg.escher;
 import static java.text.MessageFormat.format;
 
 import java.awt.Window;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -42,6 +44,8 @@ import org.sbml.jsbml.SBMLDocument;
 import org.sbml.jsbml.SBMLException;
 import org.sbml.jsbml.SBMLReader;
 import org.sbml.jsbml.TidySBMLWriter;
+import org.sbml.jsbml.ext.fbc.FBCConstants;
+import org.sbml.jsbml.ext.fbc.FBCModelPlugin;
 import org.xml.sax.SAXException;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -566,6 +570,7 @@ public class EscherConverter extends Launcher {
         break;
 
       case SBML:
+        extractCobraModel(input);
         List<EscherMap> maps = convert(SBMLReader.read(input), properties);
         writeEscherJson(maps, output);
         success = true;
@@ -585,6 +590,49 @@ public class EscherConverter extends Launcher {
     if (success) {
       logger.info(format(
         "Output successfully written to file {0}.", output));
+    }
+  }
+
+
+  public static boolean extractCobraModel(File file) throws IOException, XMLStreamException {
+    SBMLDocument doc = SBMLReader.read(file);
+    // FBCModelPlugin modelPlugin = (FBCModelPlugin) doc.getPlugin(FBCConstants.shortLabel);
+    if (false) {
+      logger.warning(format(bundle.getString("SBMLFBCNotAvailable"), file.getName()));
+      return false;
+    }
+    else {
+      logger.info(format(bundle.getString("SBMLFBCInit"), file.getName()));
+      // Execute: py3 -c "from cobra import io;
+      // io.save_json_model(model=io.read_sbml_model('FILENAME'), file_name='FILENAME')"
+
+      String command = "python3 -c \"from cobra import io;"
+          + "io.save_json_model(model=io.read_sbml_model('" + file
+          .getAbsolutePath() + "'), file_name='" + file
+          .getAbsolutePath() + ".json" + "')\"";
+      Process p;
+      try {
+        p = Runtime.getRuntime().exec(command);
+        if (p.waitFor() == 0) {
+          logger.info(format(bundle.getString("SBMLFBCExtractionSuccessful"), file
+              .getAbsolutePath(), file.getAbsolutePath()));
+          return true;
+        }
+        else {
+          logger.info(format(bundle.getString("SBMLFBCExtractionFailed")));
+          BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+          String cobrapy_output = "";
+          cobrapy_output = reader.readLine();
+          while (cobrapy_output != null) {
+            logger.warning(cobrapy_output);
+            cobrapy_output = reader.readLine();
+          }
+          return false;
+        }
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+        return false;
+      }
     }
   }
 
