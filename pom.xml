@@ -368,14 +368,14 @@
 		<outputDirectory>target/site</outputDirectory>
 		<plugins>
 			<!--  Generation of the Javadoc -->
-			<!-- <plugin>
+			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
 				<version>2.10.3</version>
 				<configuration>
 					<overview>${project.basedir}/src/main/javadoc/overview.html</overview>
 				</configuration>
-			</plugin> -->
+			</plugin>
 			<!-- Generation of project information for the website (run mvn:site with outcommented maven-javadoc-plugin) -->
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
